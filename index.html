@@ -3,70 +3,241 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CloudHost Pro</title>
+    <title>CloudHost | Instant HTML Deployment</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #0f172a; color: #f8fafc; }
+        .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .gradient-text { background: linear-gradient(90deg, #818cf8, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .drop-zone-active { border-color: #818cf8; background: rgba(99, 102, 241, 0.1); transform: scale(1.02); }
+        .btn-primary { background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); transition: all 0.3s ease; }
+        .btn-primary:hover { opacity: 0.9; transform: translateY(-2px); box-shadow: 0 10px 20px -10px #6366f1; }
+        
+        /* Custom Loader */
+        .loading-bar { height: 3px; width: 0%; background: #818cf8; transition: width 0.4s ease; }
+    </style>
 </head>
-<body class="bg-slate-900 flex items-center justify-center min-h-screen p-4 text-white">
+<body class="min-h-screen">
 
-    <div class="max-w-md w-full bg-slate-800 p-8 rounded-3xl border border-slate-700 shadow-2xl">
-        <h1 class="text-2xl font-bold mb-2 text-center">Instant HTML Host</h1>
-        <p class="text-slate-400 text-sm text-center mb-8">No Banner, Direct Links, Free Hosting</p>
-
-        <div id="dropZone" onclick="document.getElementById('fileInput').click()" class="border-2 border-dashed border-indigo-500 rounded-2xl p-10 text-center cursor-pointer hover:bg-slate-700 transition">
-            <input type="file" id="fileInput" accept=".html" class="hidden">
-            <i class="fas fa-file-code text-4xl text-indigo-400 mb-3"></i>
-            <p id="statusText">Click to select HTML file</p>
-        </div>
-
-        <button id="uploadBtn" onclick="uploadFile()" class="w-full bg-indigo-600 mt-6 py-3 rounded-xl font-bold hover:bg-indigo-500 hidden transition transform active:scale-95">
-            Generate Direct Link
-        </button>
-
-        <div id="loader" class="hidden mt-6 text-center">
-            <div class="animate-spin inline-block w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full"></div>
-        </div>
-
-        <div id="result" class="hidden mt-6 p-4 bg-slate-700 rounded-xl">
-            <label class="text-xs text-slate-400">Direct URL:</label>
-            <div class="flex items-center gap-2 mt-1">
-                <input type="text" id="shareUrl" readonly class="bg-slate-900 w-full p-2 rounded text-sm outline-none">
-                <button onclick="copyUrl()" class="bg-indigo-600 p-2 rounded hover:bg-indigo-500"><i class="fas fa-copy"></i></button>
+    <!-- Navigation -->
+    <nav class="p-6 flex justify-between items-center max-w-6xl mx-auto">
+        <div class="flex items-center gap-2">
+            <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                <i class="fas fa-bolt text-white text-xl"></i>
             </div>
-            <a id="previewLink" href="#" target="_blank" class="block text-center mt-4 text-indigo-400 text-sm underline">Open Website</a>
+            <span class="text-xl font-bold tracking-tight">Cloud<span class="text-indigo-400">Host</span></span>
         </div>
+        <div class="hidden md:flex gap-8 text-sm text-slate-400 font-medium">
+            <a href="#" class="hover:text-white transition">Features</a>
+            <a href="#" class="hover:text-white transition">Documentation</a>
+            <a href="#" class="hover:text-white transition">API</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <main class="max-w-4xl mx-auto pt-12 pb-24 px-6">
+        <div class="text-center mb-16">
+            <span class="px-4 py-2 rounded-full bg-indigo-500/10 text-indigo-400 text-xs font-bold uppercase tracking-widest border border-indigo-500/20">
+                v2.0 is now live
+            </span>
+            <h1 class="text-5xl md:text-6xl font-extrabold mt-6 mb-6 leading-tight">
+                Deploy your HTML in <span class="gradient-text">Seconds.</span>
+            </h1>
+            <p class="text-slate-400 text-lg max-w-2xl mx-auto">
+                The simplest way to host your static HTML files. Get a professional direct link without any banners or server costs.
+            </p>
+        </div>
+
+        <!-- Upload Container -->
+        <div class="glass-card rounded-3xl p-8 md:p-12 shadow-2xl relative overflow-hidden">
+            <div id="uploadProgress" class="absolute top-0 left-0 loading-bar"></div>
+
+            <div id="dropZone" class="border-2 border-dashed border-slate-700 rounded-2xl p-12 text-center transition-all duration-300 group cursor-pointer">
+                <input type="file" id="fileInput" accept=".html" class="hidden">
+                
+                <div id="preUploadUI">
+                    <div class="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:bg-slate-700 transition">
+                        <i class="fas fa-cloud-arrow-up text-3xl text-indigo-400"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-2">Drag & Drop HTML File</h3>
+                    <p class="text-slate-500 text-sm">Or click to browse from your computer</p>
+                </div>
+
+                <div id="fileSelectedUI" class="hidden">
+                    <div class="flex items-center justify-center gap-4 bg-slate-800/50 p-4 rounded-xl border border-slate-700 max-w-sm mx-auto">
+                        <i class="fas fa-file-code text-3xl text-indigo-400"></i>
+                        <div class="text-left">
+                            <p id="fileName" class="font-semibold text-indigo-300 truncate w-40">index.html</p>
+                            <p id="fileSize" class="text-xs text-slate-500">2.4 KB</p>
+                        </div>
+                        <button onclick="resetUpload()" class="ml-4 text-slate-500 hover:text-red-400"><i class="fas fa-times"></i></button>
+                    </div>
+                    <button onclick="processUpload()" class="btn-primary mt-8 px-10 py-4 rounded-xl font-bold text-lg">
+                        Launch Website <i class="fas fa-rocket ml-2 text-sm"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Result Section -->
+            <div id="resultArea" class="hidden mt-10 p-6 bg-slate-900/50 border border-emerald-500/20 rounded-2xl animate-fade-in">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-8 h-8 bg-emerald-500/20 rounded-full flex items-center justify-center">
+                        <i class="fas fa-check text-emerald-500 text-sm"></i>
+                    </div>
+                    <span class="text-emerald-400 font-semibold uppercase text-xs tracking-widest">Successfully Deployed</span>
+                </div>
+                
+                <div class="flex flex-col md:flex-row gap-3">
+                    <input type="text" id="shareLink" readonly class="bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm w-full outline-none focus:border-indigo-500">
+                    <div class="flex gap-2">
+                        <button onclick="copyLink()" class="bg-slate-800 hover:bg-slate-700 px-5 py-3 rounded-xl transition border border-slate-700">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                        <a id="visitLink" href="#" target="_blank" class="bg-indigo-600 hover:bg-indigo-500 px-5 py-3 rounded-xl transition flex items-center gap-2 font-bold whitespace-nowrap">
+                            Visit Site <i class="fas fa-external-link-alt text-xs"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Grid -->
+        <div class="grid md:grid-cols-3 gap-6 mt-20">
+            <div class="p-6 rounded-2xl border border-slate-800 hover:border-slate-700 transition">
+                <i class="fas fa-shield-halved text-indigo-400 text-2xl mb-4"></i>
+                <h4 class="font-bold mb-2">No Banners</h4>
+                <p class="text-slate-500 text-sm leading-relaxed">Clean deployment without any Google Script watermarks or banners.</p>
+            </div>
+            <div class="p-6 rounded-2xl border border-slate-800 hover:border-slate-700 transition">
+                <i class="fas fa-link text-indigo-400 text-2xl mb-4"></i>
+                <h4 class="font-bold mb-2">Instant Links</h4>
+                <p class="text-slate-500 text-sm leading-relaxed">Your unique URL is generated instantly upon successful upload.</p>
+            </div>
+            <div class="p-6 rounded-2xl border border-slate-800 hover:border-slate-700 transition">
+                <i class="fas fa-code text-indigo-400 text-2xl mb-4"></i>
+                <h4 class="font-bold mb-2">SEO Friendly</h4>
+                <p class="text-slate-500 text-sm leading-relaxed">Meta tags and titles are fully supported within your HTML files.</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-slate-800 border border-slate-700 px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 translate-y-24 transition-all duration-500 opacity-0 z-[100]">
+        <i class="fas fa-info-circle text-indigo-400"></i>
+        <span id="toastMsg" class="text-sm font-medium">Link copied to clipboard!</span>
     </div>
 
     <script>
+        // --- CONFIGURATION ---
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzUiKL1oK0BFX5XwajRlbvoeESr6TLVtWrnu0Rtn3mi3eZ2qYHMtQMfZuG3kmHVyNtW/exec";
-        const VIEWER_URL = "https://surajhost.netlify.app/view.html"; // APNI SITE KA LINK
+        const VIEWER_URL = "https://surajhost.netlify.app/view.html"; // Change to your actual domain
 
+        const dropZone = document.getElementById('dropZone');
         const fileInput = document.getElementById('fileInput');
-        const uploadBtn = document.getElementById('uploadBtn');
-        const statusText = document.getElementById('statusText');
+        const preUploadUI = document.getElementById('preUploadUI');
+        const fileSelectedUI = document.getElementById('fileSelectedUI');
+        const fileNameDisp = document.getElementById('fileName');
+        const fileSizeDisp = document.getElementById('fileSize');
 
-        fileInput.onchange = () => {
-            if(fileInput.files.length > 0) {
-                statusText.innerText = fileInput.files[0].name;
-                uploadBtn.classList.remove('hidden');
+        // Drag & Drop Listeners
+        ['dragenter', 'dragover'].forEach(name => {
+            dropZone.addEventListener(name, (e) => {
+                e.preventDefault();
+                dropZone.classList.add('drop-zone-active');
+            });
+        });
+
+        ['dragleave', 'drop'].forEach(name => {
+            dropZone.addEventListener(name, (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('drop-zone-active');
+            });
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            const files = e.dataTransfer.files;
+            handleFileSelect(files[0]);
+        });
+
+        dropZone.onclick = () => fileInput.click();
+        fileInput.onchange = () => handleFileSelect(fileInput.files[0]);
+
+        function handleFileSelect(file) {
+            if (file && file.name.endsWith('.html')) {
+                fileNameDisp.innerText = file.name;
+                fileSizeDisp.innerText = (file.size / 1024).toFixed(1) + " KB";
+                preUploadUI.classList.add('hidden');
+                fileSelectedUI.classList.remove('hidden');
+            } else {
+                showToast("Please select a valid HTML file", true);
             }
         }
 
-        async function uploadFile() {
-            const file = fileInput.files[0];
+        function resetUpload() {
+            fileInput.value = "";
+            preUploadUI.classList.remove('hidden');
+            fileSelectedUI.classList.add('hidden');
+            document.getElementById('resultArea').classList.add('hidden');
+        }
+
+        async function processUpload() {
+            const file = fileInput.files[0] || document.querySelector('#dropZone').file; // simplify for drop
             const reader = new FileReader();
             
-            document.getElementById('loader').classList.remove('hidden');
-            uploadBtn.classList.add('hidden');
+            // UI State
+            document.getElementById('uploadProgress').style.width = "40%";
+            const btn = document.querySelector('#fileSelectedUI button');
+            btn.innerHTML = `<i class="fas fa-circle-notch animate-spin"></i> Deploying...`;
+            btn.disabled = true;
 
             reader.onload = async function(e) {
-                const html = e.target.result;
+                const htmlContent = e.target.result;
                 try {
                     const response = await fetch(SCRIPT_URL, {
                         method: "POST",
-                        body: JSON.stringify({ html: html, fileName: file.name })
+                        body: JSON.stringify({ html: htmlContent, fileName: file.name })
                     });
                     const data = await response.json();
+                    
+                    document.getElementById('uploadProgress').style.width = "100%";
+                    const finalUrl = `${VIEWER_URL}?id=${data.id}`;
+                    
+                    document.getElementById('resultArea').classList.remove('hidden');
+                    document.getElementById('shareLink').value = finalUrl;
+                    document.getElementById('visitLink').href = finalUrl;
+                    
+                    showToast("Deployment successful!");
+                    btn.innerHTML = `Launch Website <i class="fas fa-rocket ml-2"></i>`;
+                    btn.disabled = false;
+
+                } catch (err) {
+                    showToast("Server error. Try again.", true);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function copyLink() {
+            const copyText = document.getElementById("shareLink");
+            copyText.select();
+            document.execCommand("copy");
+            showToast("Copied to clipboard!");
+        }
+
+        function showToast(msg, isError = false) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = msg;
+            toast.style.borderColor = isError ? '#ef4444' : '#818cf8';
+            toast.classList.remove('translate-y-24', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-24', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>                    const data = await response.json();
                     
                     const directLink = `${VIEWER_URL}?id=${data.id}`;
                     document.getElementById('loader').classList.add('hidden');
