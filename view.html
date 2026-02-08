@@ -3,55 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Loading...</title>
+    <title>Loading... | CloudHost</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; }
-        .loader-container { display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif; background: #0f172a; color: white; }
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background-color: #0f172a; }
+        
+        /* Modern Loader Style */
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #6366f1;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        #viewer-frame {
+            width: 100%;
+            height: 100vh;
+            border: none;
+            display: none; /* Starting hidden */
+        }
+
+        .fade-in { animation: fadeIn 0.5s ease-in forwards; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
-    <div id="loader" class="loader-container">
-        <div>Please wait... Loading Page</div>
+
+    <!-- Professional Loader Screen -->
+    <div id="loader-screen" class="fixed inset-0 flex flex-col items-center justify-center z-50 transition-opacity duration-500">
+        <div class="spinner mb-4"></div>
+        <h1 class="text-white font-medium text-lg tracking-wider animate-pulse">Initializing Secure Connection...</h1>
+        <p class="text-slate-500 text-sm mt-2">Loading hosted content</p>
     </div>
 
-    <!-- User ka HTML yahan iframe mein load hoga -->
-    <iframe id="viewer" style="width:100%; height:100vh; border:none; display:none;"></iframe>
+    <!-- Error Message (Hidden by default) -->
+    <div id="error-screen" class="hidden fixed inset-0 flex flex-col items-center justify-center bg-slate-900 text-white p-6 text-center">
+        <div class="bg-red-500/10 p-6 rounded-full mb-4">
+            <svg class="w-12 h-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        </div>
+        <h2 class="text-2xl font-bold mb-2">404 - Page Not Found</h2>
+        <p class="text-slate-400 max-w-sm">The link you are trying to access is invalid or the file has been removed.</p>
+        <a href="index.html" class="mt-6 px-6 py-2 bg-indigo-600 rounded-lg hover:bg-indigo-500 transition">Go Back Home</a>
+    </div>
+
+    <!-- Main Content Frame -->
+    <iframe id="viewer-frame" sandbox="allow-scripts allow-forms allow-popups allow-modals"></iframe>
 
     <script>
+        // --- CONFIGURATION ---
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzUiKL1oK0BFX5XwajRlbvoeESr6TLVtWrnu0Rtn3mi3eZ2qYHMtQMfZuG3kmHVyNtW/exec";
-        
-        async function loadPage() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const id = urlParams.get('id');
 
-            if (!id) {
-                document.body.innerHTML = "No Page ID provided.";
+        async function fetchAndRender() {
+            const loader = document.getElementById('loader-screen');
+            const frame = document.getElementById('viewer-frame');
+            const errorScreen = document.getElementById('error-screen');
+            
+            // Get ID from URL (?id=page_123)
+            const urlParams = new URLSearchParams(window.location.search);
+            const pageId = urlParams.get('id');
+
+            if (!pageId) {
+                showError();
                 return;
             }
 
             try {
-                const response = await fetch(`${SCRIPT_URL}?id=${id}`);
+                // Fetch HTML content from Google Sheet via Apps Script
+                const response = await fetch(`${SCRIPT_URL}?id=${pageId}`);
                 const data = await response.json();
 
                 if (data.html) {
-                    const iframe = document.getElementById('viewer');
-                    const loader = document.getElementById('loader');
+                    // Update Title of the tab
+                    document.title = "CloudHost | Live Preview";
                     
-                    // HTML content ko iframe mein inject karna (Banner bypass karne ke liye)
-                    iframe.srcdoc = data.html;
-                    iframe.onload = () => {
-                        loader.style.display = 'none';
-                        iframe.style.display = 'block';
-                    };
+                    // Injecting the HTML directly into iframe
+                    // This bypasses the Google banner completely
+                    const doc = frame.contentWindow.document;
+                    doc.open();
+                    doc.write(data.html);
+                    doc.close();
+
+                    // Smooth Transition: Hide loader and show frame
+                    setTimeout(() => {
+                        loader.classList.add('opacity-0');
+                        setTimeout(() => {
+                            loader.style.display = 'none';
+                            frame.style.display = 'block';
+                            frame.classList.add('fade-in');
+                        }, 500);
+                    }, 800);
+
                 } else {
-                    document.body.innerHTML = "Page not found.";
+                    showError();
                 }
             } catch (err) {
-                document.body.innerHTML = "Error loading page.";
+                console.error(err);
+                showError();
             }
         }
 
-        loadPage();
+        function showError() {
+            document.getElementById('loader-screen').style.display = 'none';
+            document.getElementById('error-screen').classList.remove('hidden');
+            document.title = "404 Not Found";
+        }
+
+        // Start the process
+        fetchAndRender();
     </script>
 </body>
 </html>
