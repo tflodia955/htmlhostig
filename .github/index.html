@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudHost Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-slate-900 flex items-center justify-center min-h-screen p-4 text-white">
+
+    <div class="max-w-md w-full bg-slate-800 p-8 rounded-3xl border border-slate-700 shadow-2xl">
+        <h1 class="text-2xl font-bold mb-2 text-center">Instant HTML Host</h1>
+        <p class="text-slate-400 text-sm text-center mb-8">No Banner, Direct Links, Free Hosting</p>
+
+        <div id="dropZone" onclick="document.getElementById('fileInput').click()" class="border-2 border-dashed border-indigo-500 rounded-2xl p-10 text-center cursor-pointer hover:bg-slate-700 transition">
+            <input type="file" id="fileInput" accept=".html" class="hidden">
+            <i class="fas fa-file-code text-4xl text-indigo-400 mb-3"></i>
+            <p id="statusText">Click to select HTML file</p>
+        </div>
+
+        <button id="uploadBtn" onclick="uploadFile()" class="w-full bg-indigo-600 mt-6 py-3 rounded-xl font-bold hover:bg-indigo-500 hidden transition transform active:scale-95">
+            Generate Direct Link
+        </button>
+
+        <div id="loader" class="hidden mt-6 text-center">
+            <div class="animate-spin inline-block w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full"></div>
+        </div>
+
+        <div id="result" class="hidden mt-6 p-4 bg-slate-700 rounded-xl">
+            <label class="text-xs text-slate-400">Direct URL:</label>
+            <div class="flex items-center gap-2 mt-1">
+                <input type="text" id="shareUrl" readonly class="bg-slate-900 w-full p-2 rounded text-sm outline-none">
+                <button onclick="copyUrl()" class="bg-indigo-600 p-2 rounded hover:bg-indigo-500"><i class="fas fa-copy"></i></button>
+            </div>
+            <a id="previewLink" href="#" target="_blank" class="block text-center mt-4 text-indigo-400 text-sm underline">Open Website</a>
+        </div>
+    </div>
+
+    <script>
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzUiKL1oK0BFX5XwajRlbvoeESr6TLVtWrnu0Rtn3mi3eZ2qYHMtQMfZuG3kmHVyNtW/exec";
+        const VIEWER_URL = "https://surajhost.netlify.app/view.html"; // APNI SITE KA LINK
+
+        const fileInput = document.getElementById('fileInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const statusText = document.getElementById('statusText');
+
+        fileInput.onchange = () => {
+            if(fileInput.files.length > 0) {
+                statusText.innerText = fileInput.files[0].name;
+                uploadBtn.classList.remove('hidden');
+            }
+        }
+
+        async function uploadFile() {
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            
+            document.getElementById('loader').classList.remove('hidden');
+            uploadBtn.classList.add('hidden');
+
+            reader.onload = async function(e) {
+                const html = e.target.result;
+                try {
+                    const response = await fetch(SCRIPT_URL, {
+                        method: "POST",
+                        body: JSON.stringify({ html: html, fileName: file.name })
+                    });
+                    const data = await response.json();
+                    
+                    const directLink = `${VIEWER_URL}?id=${data.id}`;
+                    document.getElementById('loader').classList.add('hidden');
+                    document.getElementById('result').classList.remove('hidden');
+                    document.getElementById('shareUrl').value = directLink;
+                    document.getElementById('previewLink').href = directLink;
+                } catch (err) {
+                    alert("Upload failed!");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function copyUrl() {
+            const input = document.getElementById('shareUrl');
+            input.select();
+            document.execCommand('copy');
+            alert("Copied!");
+        }
+    </script>
+</body>
+</html>
